@@ -1,0 +1,115 @@
+<!--<html lang="en">-->
+<!--<head>-->
+    <!--<title>Home</title>-->
+    <!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">-->
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">-->
+    <!--<meta charset="UTF-8">-->
+    <!--<title>Hello</title>-->
+    <!--<style>-->
+        <!--.content-header{-->
+            <!--display: table;-->
+            <!--width: 100%;-->
+            <!--height: 100%;-->
+            <!--/*position : absolute;*/-->
+            <!--background-color: 		#9fcffb;-->
+            <!--color: white;-->
+            <!--vertical-align:middle;-->
+        <!--}-->
+        <!--*, ::after, ::before {-->
+            <!--box-sizing: border-box;-->
+        <!--}-->
+        <!--.login-wrapper{-->
+            <!--/*padding-top: 290px;*/-->
+            <!--display: table-cell;-->
+            <!--text-align: center;-->
+            <!--vertical-align: middle;-->
+            <!--width: 100%;-->
+        <!--}-->
+    <!--</style>-->
+<!--</head>-->
+<!--<body>-->
+    <!--&lt;!&ndash;<div class="content-header">&ndash;&gt;-->
+        <!--&lt;!&ndash;<div class="login-wrapper">&ndash;&gt;-->
+            <!--&lt;!&ndash;<h3>Hello World</h3>&ndash;&gt;-->
+                <!--&lt;!&ndash;<h4>Upload Files</h4>&ndash;&gt;-->
+                <!--&lt;!&ndash;&lt;!&ndash;<form enctype="multipart/form-data" action="/upload" method="post" >&ndash;&gt;&ndash;&gt;-->
+                    <!--&lt;!&ndash;&lt;!&ndash;<input type="file" name="filearg" accept="image/*" />&ndash;&gt;&ndash;&gt;-->
+                    <!--&lt;!&ndash;&lt;!&ndash;<input type="submit" value="upload" />&ndash;&gt;&ndash;&gt;-->
+                <!--&lt;!&ndash;&lt;!&ndash;</form>&ndash;&gt;&ndash;&gt;-->
+        <!--&lt;!&ndash;</div>&ndash;&gt;-->
+    <!--&lt;!&ndash;</div>&ndash;&gt;-->
+    <!--<div class="content-header">-->
+    <!--<div class="login-wrapper">-->
+        <!--<h1 align="center"> Tornado Web Project</h1>-->
+        <!--&lt;!&ndash;<h4 align="center"> Welcome To Loket</h4>&ndash;&gt;-->
+        <!--<a href="/login" role="button" class="btn btn-info"><span class="fa fa-google" aria-hidden="true" style="font-size:20px"></span>-->
+            <!--Login</a>-->
+
+
+
+    <!--</div>-->
+<!--</div>-->
+<!--<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>-->
+<!--</body>-->
+
+<!--</html>-->
+
+<html>
+<head>
+    <title>Welcome</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+    <style>
+        .content-header{
+            display: table;
+            width: 100%;
+            height: 100%;
+            /*position : absolute;*/
+            background-color: 		#9fcffb;
+            color: white;
+            vertical-align:middle;
+        }
+        *, ::after, ::before {
+            box-sizing: border-box;
+        }
+        .login-wrapper{
+            /*padding-top: 290px;*/
+            display: table-cell;
+            text-align: center;
+            vertical-align: middle;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="content-header">
+        <div class="login-wrapper">
+            <h3>Hello World</h3>
+                <h4>Upload Files</h4>
+                <form enctype="multipart/form-data" action="/upload" method="post" >
+                    <label class="btn btn-default">
+                        Browse <input type="file" name="filearg" accept="image/*" hidden>
+                    </label>
+
+                    <!--<input type="file" name="filearg" accept="image/*" />-->
+
+                    <input type="submit" value="upload" role="button" class="btn btn-info" />
+                </form>
+        </div>
+    </div>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script>
+    if (typeof(Storage) !== "undefined") {
+        // Store
+        localStorage.setItem("lastname", "Smith");
+        // Retrieve
+        document.getElementById("result").innerHTML = localStorage.getItem("lastname");
+    } else {
+        document.getElementById("result").innerHTML = "Sorry, your browser does not support Web Storage...";
+    }
+</script>
+</body>
+
+</html>
