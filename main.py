@@ -17,8 +17,17 @@ import pymysql
 #
 
 
-db = pymysql.connect("localhost","root","","tornado_test")
 
+class User():
+
+    def set_id(self,id):
+        self.id = id
+    def get_id(self):
+        return self.id
+
+db = pymysql.connect("localhost", "root", "", "tornado_test")
+static_user = User()
+cursor = db.cursor()
 # pymysql.connect('','')
 #
 # pool = tormysql.ConnectionPool(
@@ -35,10 +44,10 @@ db = pymysql.connect("localhost","root","","tornado_test")
 # IOLoop = tornado.ioloop.IOLoop.current()
 # @gen
 def insert_user(stmt,data,id):
-    cursor = db.cursor()
+    # cursor = db.cursor()
     try:
         # sql = "SELECT * FROM USERS WHERE google_id '%d'" % (1000)
-        sql = "SELECT * FROM USERS WHERE google_id = '%s'" % (id)
+        sql = "SELECT ID FROM USERS WHERE google_id = '%s'" % (id)
         cursor.execute(sql)
         # Fetch all the rows in a list of lists.
         results = cursor.fetchall()
@@ -48,13 +57,25 @@ def insert_user(stmt,data,id):
         db.commit()
     except:
         db.rollback()
-
-def insert_photo(stmt,data):
-    cursor = db.cursor()
+def get_user_id(google_id):
     try:
-        cursor.execute(stmt, data)
+        sql = "SELECT ID FROM USERS WHERE google_id = '%s'" % (google_id)
+        cursor.execute(sql)
+        results = cursor.fetchone()
+        db.commit()
+        return results[0]
+    except:
+        db.rollback()
+
+def insert_photo(file_name):
+    print(file_name,static_user.get_id())
+    try:
+        print('masuk try')
+        stmt= "INSERT INTO PHOTOS(filename,user_id) VALUES('%s','%d')" % (file_name,static_user.get_id())
+        cursor.execute(stmt)
         db.commit()
     except:
+        print('gagal')
         db.rollback()
 # def insert_photo(stmt,data):
 
@@ -88,12 +109,6 @@ class HomeHandler(tornado.web.RequestHandler):
 class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,
                                tornado.auth.GoogleOAuth2Mixin):
     async def get(self):
-        # print(self.get_argument('code'))
-        # self.get_argument('code','code')
-        # settings = dict(
-        #     cookie_secret="32oETzKXQAGaYdkL5gEmGeJJFuYh7EQnp2XdTP1o/Vo=",
-        #     google_oauth={"key": '188260276961-vnct27bserf5blt209hmt9p16g0ihm0t.apps.googleusercontent.com', "secret": '5_ljzUmUAJAvzw7IGItrYVP7'},
-        # )
         if self.get_argument('code', False):
             print('masuk')
             access = await self.get_authenticated_user(
@@ -104,7 +119,7 @@ class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,
                 "https://www.googleapis.com/oauth2/v1/userinfo",
                 access_token=access["access_token"])
             self.set_secure_cookie('user_access_token',access['access_token'])
-            print('sampe sini')
+            # print('sampe sini')
             # # print('access token')
             # print('access token', user['access_token'])
             insert_stmt = (
@@ -112,12 +127,11 @@ class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,
                 "VALUES (%s, %s, %s)"
             )
             data = (user['name'], user['email'], user['id'])
-
-
             data = insert_user(insert_stmt,data,user['id'])
-            print(data)
-            print(user)
-            print('success')
+
+            static_user.set_id(get_user_id(user['id']))
+            # print(data)
+            # print(user)
             self.redirect('/home')
             # self.redirect('/authenticate')
 
@@ -154,6 +168,7 @@ class UploadFileHandler(tornado.web.RequestHandler):
         fname = fileinfo['filename']
         extn = os.path.splitext(fname)[1]
         cname = str(uuid.uuid4()) + extn
+        insert_photo(cname)
         fh = open((__UPLOADS__+'/'+cname), 'wb')
         # fh = open((__UPLOADS__+'/'+cname), 'w') untuk python 2
         fh.write(fileinfo['body'])
