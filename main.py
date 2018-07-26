@@ -1,6 +1,7 @@
 import tornado.ioloop
 import tornado.web
 import tornado
+import shutil
 import tornado_mysql
 from tornado import gen
 import tornado.ioloop
@@ -9,11 +10,12 @@ import os.path
 import tornado.auth
 import uuid
 import tormysql
+import os
 import pymysql
 import datetime
 from PIL import Image,ImageFile
 import configparser
-
+from io import StringIO,BytesIO
 # GET_ARGUMENT ITU KETIKA ADA VARIABLE DI URI
 # %S BUAT STRING %D BUAT INTEGER
 # JADINYA PAKE PYMYSQL, KARENA TORNADO MYSQL POOL NYA KE CLOSE SENDIRI
@@ -88,6 +90,14 @@ def insert_photo(file_name,id):
         print('gagal')
         db.rollback()
 
+# class CheckAuthHandler()
+def check_auth(check):
+    check.get_secure_cookie('user_access_token')
+
+class LogoutHandler(tornado.web.RequestHandler):
+    def post(self):
+        self.clear_all_cookies()
+
 # def get_photos():
 #     try:
 #         stmt = "SELECT FILENAME FROM PHOTOS WHERE USER_ID = ('%s')" %
@@ -151,31 +161,57 @@ class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,
 #         self.set_secure_cookie(user.access_token)
 #         print(user)
 
+# def open(fp, mode="r"):
+
+
+
 class UploadFileHandler(tornado.web.RequestHandler):
     def post(self):
+        fileinfo = self.request.files['filearg'][0]
+        new_img = fileinfo['body']
+        if(len(new_img)>5000000):
+            print(len(new_img))
+            self.redirect('/home')
+            return
         try:
-            img = Image.open(self.request.files['filearg'][0])
+            file_name = fileinfo['filename']
+            img = Image.open(BytesIO(self.request.files['filearg'][0]['body']))
+            try:
+                img.verify()
+            except Exception:
+                # return flash
+                self.flush('fail')
+                self.redirect('/home')
             date_now = datetime.datetime.now()
             str_date = date_now.strftime("%Y-%m-%d")
-            img.save("out.jpg", "JPEG", quality=80, optimize=True,
-                     progressive=True)
-
-            # do stuff
-        except IOError:
-            # filename not an image file
-            # add flash
+            upload_path = __CONFIG__['DEFAULT']['upload_path']+'/'+str_date
+            if not os.path.exists(upload_path):
+                os.makedirs(upload_path)
+            upload_path+='/'+file_name[0:2]
+            if not os.path.exists(upload_path):
+                os.makedirs(upload_path)
+            new_name = str_date+'_'+file_name
+            fh = open((upload_path+ '/' + new_name), 'wb')
+            fh.write(fileinfo['body'])
             self.redirect('/home')
+            # progressive_img = new_name+'progressive'
+            # progressive_img = StringIO()
+            # img.save(progressive_img, "JPEG", quality=80, optimize=True,progressive=True)
 
-        fileinfo = self.request.files['filearg'][0]
-        fname = fileinfo['filename']
-        extn = os.path.splitext(fname)[1]
-        cname = str(uuid.uuid4()) + extn
-        insert_photo(cname)
-        fh = open((__UPLOADS__+'/'+cname), 'wb')
-        # fh = open((__UPLOADS__+'/'+cname), 'w') untuk python 2
-        fh.write(fileinfo['body'])
-        # self.finish(cname + " is uploaded!! Check %s folder" %__UPLOADS__)
-        self.redirect('/home')
+        except IOError:
+            self.redirect('/home')
+            return
+
+        # fileinfo = self.request.files['filearg'][0]
+        # fname = fileinfo['filename']
+        # extn = os.path.splitext(fname)[1]
+        # cname = str(uuid.uuid4()) + extn
+        # insert_photo(cname)
+        # fh = open((__UPLOADS__+'/'+cname), 'wb')
+        # # fh = open((__UPLOADS__+'/'+cname), 'w') untuk python 2
+        # fh.write(fileinfo['body'])
+        # # self.finish(cname + " is uploaded!! Check %s folder" %__UPLOADS__)
+        # self.redirect('/home')
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
