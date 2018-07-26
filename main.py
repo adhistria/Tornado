@@ -10,96 +10,118 @@ import tornado.auth
 import uuid
 import tormysql
 import pymysql
+import datetime
+from PIL import Image,ImageFile
+import configparser
 
 # GET_ARGUMENT ITU KETIKA ADA VARIABLE DI URI
 # %S BUAT STRING %D BUAT INTEGER
 # JADINYA PAKE PYMYSQL, KARENA TORNADO MYSQL POOL NYA KE CLOSE SENDIRI
 #
+__UPLOADS__ = os.path.dirname(__file__)+ "/uploads"
+__CONFIG__ = configparser.ConfigParser()
+
+# class Database2():
+#     def __init__(self):
+#         self.user = __CONFIG__['DEFAULT'] ['db_user']
+#         self.password = __CONFIG__['DEFAULT'] ['db_password']
+#         self.host = __CONFIG__['DEFAULT'] ['db_host']
+#         self.db_name = __CONFIG__['DEFAULT'] ['db_name']
+#         self.db = pymysql.connect(self.host,self.user,self.password,self.db_name)
+#         self.cursor = self.db.cursor()
+#     def insert_user(self,data,id):
+#         try:
+#             sql = "SELECT EMAIL FROM USERS WHERE google_id = '%s'" % (id)
+#             cursor.execute(sql)
+#             results = cursor.fetchall()
+#             if (len(results) == 0):
+#                 print('bener 0')
+#                 stmt = (
+#                     "INSERT INTO users (name, email, google_id) "
+#                     "VALUES (%s, %s, %s)"
+#                 )
+#                 cursor.execute(stmt, data)
+#             db.commit()
+#         except:
+#             db.rollback()
 
 
-
-class User():
-
-    def set_id(self,id):
-        self.id = id
-    def get_id(self):
-        return self.id
 
 db = pymysql.connect("localhost", "root", "", "tornado_test")
-static_user = User()
 cursor = db.cursor()
-# pymysql.connect('','')
-#
-# pool = tormysql.ConnectionPool(
-#     max_connections = 20, #max open connections
-#     idle_seconds = 7200, #conntion idle timeout time, 0 is not timeout
-#     wait_connection_timeout = 3, #wait connection timeout
-#     host = "127.0.0.1",
-#     user = "root",
-#     passwd = "",
-#     db = "tornado_test",
-#     charset = "utf8"
-# )
-#
-# IOLoop = tornado.ioloop.IOLoop.current()
-# @gen
-def insert_user(stmt,data,id):
-    # cursor = db.cursor()
+
+def insert_user(data,id):
+
     try:
-        # sql = "SELECT * FROM USERS WHERE google_id '%d'" % (1000)
-        sql = "SELECT ID FROM USERS WHERE google_id = '%s'" % (id)
+        sql = "SELECT EMAIL FROM USERS WHERE google_id = '%s'" % (id)
         cursor.execute(sql)
-        # Fetch all the rows in a list of lists.
         results = cursor.fetchall()
-        print('coba',results)
         if(len(results)==0):
+            print('bener 0')
+            stmt = (
+                "INSERT INTO users (name, email, google_id) "
+                "VALUES (%s, %s, %s)"
+            )
             cursor.execute(stmt, data)
         db.commit()
     except:
         db.rollback()
-def get_user_id(google_id):
-    try:
-        sql = "SELECT ID FROM USERS WHERE google_id = '%s'" % (google_id)
-        cursor.execute(sql)
-        results = cursor.fetchone()
-        db.commit()
-        return results[0]
-    except:
-        db.rollback()
 
-def insert_photo(file_name):
-    print(file_name,static_user.get_id())
+# def get_user_id(google_id):
+#     try:
+#         sql = "SELECT ID FROM USERS WHERE google_id = '%s'" % (google_id)
+#         cursor.execute(sql)
+#         results = cursor.fetchone()
+#         db.commit()
+#         return results[0]
+#     except:
+#         db.rollback()
+
+def insert_photo(file_name,id):
+    print(file_name)
     try:
         print('masuk try')
-        stmt= "INSERT INTO PHOTOS(filename,user_id) VALUES('%s','%d')" % (file_name,static_user.get_id())
+        stmt= "INSERT INTO PHOTOS(filename,user_id) VALUES('%s','%d')" % (file_name,id)
         cursor.execute(stmt)
         db.commit()
     except:
         print('gagal')
         db.rollback()
-# def insert_photo(stmt,data):
 
-    # print('masuk insert user')
-    # # with ( pool.Connection()) as conn:
-    # with (yield pool.Connection()) as conn:
-    #     try:
-    #         print('try')
-    #         with conn.cursor() as cursor:
-    #             yield cursor.execute(stmt, data)
-    #             # cursor.execute(stmt, data)
-    #             # yield cursor.execute('INSERT INTO USERS(id,name,email,google_id) Values(1,"adhi","adhistria1@gmail.com","123")')
-    #     except:
-    #         print('except')
-    #         yield conn.rollback()
-    #         # conn.rollback()
-    #     else:
-    #         print('else')
-    #         # conn.commit()
-    #         yield conn.commit()
-    # yield pool.close()
+# def get_photos():
+#     try:
+#         stmt = "SELECT FILENAME FROM PHOTOS WHERE USER_ID = ('%s')" %
+class UserInfoHandler(tornado.web.RequestHandler,
+                      tornado.auth.GoogleOAuth2Mixin):
+    async def get(self):
+        user = await self.oauth2_request(
+            "https://www.googleapis.com/oauth2/v1/userinfo",
+            access_token=self.get_secure_cookie('user_access_token'))
+        self.set_secure_cookie('email',user['email'])
+        self.set_secure_cookie('user_id',user['id'])
+        data = (user['name'], user['email'], user['id'])
+        insert_user(data, user['id'])
+        self.redirect('/home')
 
-
-__UPLOADS__ = os.path.dirname(__file__)+ "/uploads"
+class CallbackHandler(tornado.web.RequestHandler,
+                      tornado.auth.GoogleOAuth2Mixin):
+    async def get(self):
+        access = await self.get_authenticated_user(
+            redirect_uri='http://localhost:8000/callback',
+            code=self.get_argument('code'),
+        )
+        # user = await self.oauth2_request(
+        #     "https://www.googleapis.com/oauth2/v1/userinfo",
+        #     access_token=access["access_token"])
+        # # print(access)
+        # print(user)
+        # self.set_secure_cookie('email',user['email'])
+        # self.set_secure_cookie('user_id',user['id'])
+        self.set_secure_cookie('user_access_token', access['access_token'])
+        # print(user['id'])
+        # data = (user['name'], user['email'], user['id'])
+        # insert_user(data,user['id'])
+        self.redirect('/user_info')
 
 class HomeHandler(tornado.web.RequestHandler):
     def get(self):
@@ -109,47 +131,14 @@ class HomeHandler(tornado.web.RequestHandler):
 class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,
                                tornado.auth.GoogleOAuth2Mixin):
     async def get(self):
-        if self.get_argument('code', False):
-            print('masuk')
-            access = await self.get_authenticated_user(
-                redirect_uri='http://localhost:8000/login',
-                code=self.get_argument('code'),
-            )
-            user = await self.oauth2_request(
-                "https://www.googleapis.com/oauth2/v1/userinfo",
-                access_token=access["access_token"])
-            self.set_secure_cookie('user_access_token',access['access_token'])
-            # print('sampe sini')
-            # # print('access token')
-            # print('access token', user['access_token'])
-            insert_stmt = (
-                "INSERT INTO users (name, email, google_id) "
-                "VALUES (%s, %s, %s)"
-            )
-            data = (user['name'], user['email'], user['id'])
-            data = insert_user(insert_stmt,data,user['id'])
-
-            static_user.set_id(get_user_id(user['id']))
-            # print(data)
-            # print(user)
-            self.redirect('/home')
-            # self.redirect('/authenticate')
-
-        else:
-            await self.authorize_redirect(
-                redirect_uri='http://localhost:8000/login',
-                client_secret='5_ljzUmUAJAvzw7IGItrYVP7',
-                client_id='188260276961-vnct27bserf5blt209hmt9p16g0ihm0t.apps.googleusercontent.com',
-                scope=['profile', 'email'],
-                response_type='code',
-                extra_params={'approval_prompt': 'auto'})
-
-            # user = await self.get_authenticated_user(
-            #     redirect_uri='http://localhost:8000/home')
-            # print(user)
-            # print self.get_authenticated_user(
-            #     # callback=
-            # )
+        await self.authorize_redirect(
+            redirect_uri='http://localhost:8000/callback',
+            client_secret='5_ljzUmUAJAvzw7IGItrYVP7',
+            client_id='188260276961-vnct27bserf5blt209hmt9p16g0ihm0t.apps.'
+                      'googleusercontent.com',
+            scope=['profile', 'email'],
+            response_type='code',
+            extra_params={'approval_prompt': 'auto'})
 
 # class InfoUserHandler(tornado.web.RequestHandler,tornado.auth.GoogleOAuth2Mixin):
 #     def get(self):
@@ -164,6 +153,19 @@ class GoogleOAuth2LoginHandler(tornado.web.RequestHandler,
 
 class UploadFileHandler(tornado.web.RequestHandler):
     def post(self):
+        try:
+            img = Image.open(self.request.files['filearg'][0])
+            date_now = datetime.datetime.now()
+            str_date = date_now.strftime("%Y-%m-%d")
+            img.save("out.jpg", "JPEG", quality=80, optimize=True,
+                     progressive=True)
+
+            # do stuff
+        except IOError:
+            # filename not an image file
+            # add flash
+            self.redirect('/home')
+
         fileinfo = self.request.files['filearg'][0]
         fname = fileinfo['filename']
         extn = os.path.splitext(fname)[1]
@@ -202,22 +204,34 @@ class IndexHandler(tornado.web.RequestHandler):
 #         # self.IOLoop = tornado.ioloop.IOLoop.current()
         # self.IOLoop.start()
 def main():
+    __CONFIG__.read('config.ini')
     app = tornado.web.Application(handlers =[
         (r"/",IndexHandler),
         (r"/login",GoogleOAuth2LoginHandler),
+        (r"/user_info",UserInfoHandler),
+        (r"/callback",CallbackHandler),
         (r"/home",HomeHandler),
         (r"/upload",UploadFileHandler),
         # (r"/index",IndexHandler),
         # (r"/info",InfoUserHandler)
     ],
-        template_path=os.path.join(os.path.dirname(__file__), "views"),
-        static_path=os.path.join(os.path.dirname(__file__), "static"),
+        template_path=__CONFIG__['DEFAULT']['template_path'],
+        # static_path=os.path.join(os.path.dirname(__file__), "static"),
         cookie_secret = 'cookiesupersecret',
-        google_oauth={"key": '188260276961-vnct27bserf5blt209hmt9p16g0ihm0t.apps.googleusercontent.com',
-                      "secret": '5_ljzUmUAJAvzw7IGItrYVP7'}
+        google_oauth={"key": __CONFIG__['DEFAULT']['google_client_id'],
+                      "secret": __CONFIG__['DEFAULT']['google_client_secret']}
     )
     app.listen(8000)
     tornado.ioloop.IOLoop.current().start()
 
 if __name__ == "__main__":
     main()
+    # config = configparser.ConfigParser()
+    # config.read('config.ini')
+    # print(config['DEFAULT']['upload_path'])
+    # print(config['DEFAULT']['key'])
+    # print(config['DEFAULT']['UPLOAD_PATH'])
+    # topsecret = config['DEFAULT']
+    # print(topsecret['UPLOAD_PATH'])
+    # print(__UPLOADS__)
+    # main()
