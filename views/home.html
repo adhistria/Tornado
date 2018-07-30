@@ -98,7 +98,35 @@
 
                     <input type="submit" value="upload" role="button" class="btn btn-info" />
                 </form>
+            {% for photo in photos %}
+                {% block student %}
+                  <li>{{ escape(photo.name) }}</li>
+                  <li>{{ escape(photo.url)}}</li>
+                <li> <a href="{{static_url(escape(photo.progressive_url)) }}"> Download Progressive</a></li>
+                <form method="get" action="{{static_url(escape(photo.progressive_url)) }}">
+                   <button type="submit">Download Progressive!</button>
+                </form>
+            <form method="get" action="{{static_url(escape(photo.url)) }}">
+               <button type="submit">Download Asli!</button>
+            </form>
+                  <!--<li><img src="{{ escape(photo.thumbnail_url) }}"></li>-->
+                  <!--<li><img src="2018-07-27_566fc69e030cf785cf3fc20af9f8205a60f81341.thumbnail.jpeg"></li>-->
+                  <!--<img src="image/{{escape(photo.progressive_url)}}">-->
+                  <!--<img src="image/{{static_url(escape(photo.progressive_url))}}">-->
+                  <img src="{{ static_url(escape(photo.thumbnail_url)) }}">
+                    <!--<link rel="stylesheet" href="{{ static_url(escape(photo.thumbnail_url)) }}" />-->
+
+                {% end %}
+            {% end %}
         </div>
+        <a href="/logout"
+           onclick="event.preventDefault();
+             document.getElementById('logout-form').submit();">
+            Logout
+        </a>
+        <form id="logout-form" action="/logout" method="POST"
+              style="display: none;">
+        </form>
     </div>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 <script>
